@@ -1,0 +1,26 @@
+- name: MIGRATE Force version
+  command: "migrate -path {{ appdir }}/migrations -database postgres:///{{ db }}?host=/var/run/postgresql force {{ force }}"
+  when: force is defined
+  become: yes
+  become_user: "{{ userdba }}"
+  become_method: sudo
+  register: migrate_output
+  failed_when: "'error' in migrate_output.stderr"
+
+- name: MIGRATE Execute down migrations
+  command: "migrate -path {{ appdir }}/migrations -database postgres:///{{ db }}?host=/var/run/postgresql down {{ down | replace('all','') }}"
+  when: down is defined and force is not defined
+  become: yes
+  become_user: "{{ userdba }}"
+  become_method: sudo
+  register: migrate_output
+  failed_when: "'error' in migrate_output.stderr"
+
+- name: MIGRATE Execute migrations
+  command: "migrate -path {{ appdir }}/migrations -database postgres:///{{ db }}?host=/var/run/postgresql up"
+  when: force is not defined
+  become: yes
+  become_user: "{{ userdba }}"
+  become_method: sudo
+  register: migrate_output
+  failed_when: "'error' in migrate_output.stderr"
